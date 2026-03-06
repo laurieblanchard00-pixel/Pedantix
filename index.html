@@ -36,7 +36,7 @@
   --c-proche:  #32324a;
   --c-tiede:   #28283a;
   --c-froid:   #222230;
-  --c-hidden:  #1c1c28;
+  --c-hidden:  #888899;
   --font:      'DM Sans', sans-serif;
   --mono:      'IBM Plex Mono', monospace;
   --r:         12px;
@@ -283,14 +283,15 @@ body {
   display: inline-block;
   font-family: var(--mono);
   font-size: 12.5px;
-  border-radius: 4px;
-  padding: 1px 4px;
+  border-radius: 3px;
+  padding: 0px 4px;
   margin: 1px 0;
   vertical-align: baseline;
   position: relative;
   transition: background 0.4s, color 0.4s;
   cursor: default;
   border: 1px solid transparent;
+  line-height: 1.4;
 }
 .w.exact  { background: transparent; color: #111111; font-weight: 700; border-color: transparent; }
 .w.exact.just-revealed { color: var(--green) !important; font-weight: 700; }
