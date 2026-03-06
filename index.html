@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0e0e11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pédantix">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.png">
+<title>Pédantix Clone</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #1a1a22;
+  --surf1:     #22222c;
+  --surf2:     #2a2a36;
+  --surf3:     #323240;
+  --border:    #3e3e50;
+  --blue:      #4d8ef5;
+  --blue-glow: rgba(77,142,245,0.18);
+  --green:     #30d988;
+  --amber:     #f5a623;
+  --red:       #f05c5c;
+  --white:     #eeeef5;
+  --g1:        #9898a8;
+  --g2:        #5c5c70;
+  --g3:        #36363f;
+  --g4:        #30303e;
+  --g5:        #242432;
+  --c-exact:   #1a4a32;
+  --c-proche:  #32324a;
+  --c-tiede:   #28283a;
+  --c-froid:   #222230;
+  --c-hidden:  #1c1c28;
+  --font:      'DM Sans', sans-serif;
+  --mono:      'IBM Plex Mono', monospace;
+  --r:         12px;
+  --r-sm:      8px;
+  --tr:        0.2s ease;
+}
+
+html, body { height: 100%; }
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#app { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── TOPBAR ── */
+#topbar {
+  height: 56px;
+  background: var(--surf1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  flex-shrink: 0;
+}
+.logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--blue); flex: 1; }
+.logo em { color: var(--white); font-style: normal; }
+
+#topbar-counter {
+  display: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--g1);
+  background: var(--surf2);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 20px;
+  gap: 4px;
+  align-items: center;
+}
+#topbar-counter strong { color: var(--blue); }
+
+#btn-back-top {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--g1);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 13px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: var(--tr);
+  white-space: nowrap;
+}
+#btn-back-top:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── SCREENS ── */
+.screen { display: none; flex: 1; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ══════════════════════════════
+   MENU
+══════════════════════════════ */
+#screen-menu {
+  align-items: center;
+  padding: 28px 16px 40px;
+  overflow-y: auto;
+}
+.menu-inner {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.menu-hero { text-align: center; padding: 8px 0 20px; }
+.menu-hero h1 {
+  font-size: clamp(38px, 9vw, 56px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  color: var(--blue);
+  text-shadow: 0 0 80px var(--blue-glow);
+  line-height: 1;
+}
+.menu-hero p { margin-top: 8px; color: var(--g1); font-size: 14px; }
+
+.mode-card {
+  background: var(--surf1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  cursor: pointer;
+  transition: var(--tr);
+  color: var(--white);
+  font-family: var(--font);
+  width: 100%;
+  text-align: left;
+}
+.mode-card:hover { background: var(--surf2); border-color: var(--blue); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+.mode-card:active { transform: none; }
+
+.mode-icon {
+  width: 46px; height: 46px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.mode-card.daily   .mode-icon { background: rgba(77,142,245,0.14); }
+.mode-card.random  .mode-icon { background: rgba(48,217,136,0.10); }
+.mode-card.custom  .mode-icon { background: rgba(245,166,35,0.10); }
+.mode-card.history .mode-icon { background: rgba(152,152,168,0.08); }
+
+.mode-text { flex: 1; }
+.mode-text strong { font-size: 15px; font-weight: 700; display: block; }
+.mode-text span   { font-size: 12px; color: var(--g1); display: block; margin-top: 2px; font-weight: 400; }
+.mode-chevron { color: var(--g2); font-size: 18px; }
+
+
+
+.btn-go {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px;
+  cursor: pointer;
+  transition: var(--tr);
+}
+.btn-go:hover { background: #6aa4ff; }
+
+.legend-box {
+  background: var(--surf1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 13px 15px;
+}
+.legend-box h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--g2); font-weight: 700; margin-bottom: 9px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.leg { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--g1); }
+.ls { width: 18px; height: 13px; border-radius: 3px; flex-shrink: 0; border: 1px solid transparent; }
+.ls-exact  { background: var(--green); }
+.ls-proche { background: #888; }
+.ls-tiede  { background: #555; }
+.ls-froid  { background: #333; }
+.ls-hidden { background: var(--c-hidden); border-color: var(--border); }
+
+.tip-box {
+  background: rgba(77,142,245,0.07);
+  border: 1px solid rgba(77,142,245,0.22);
+  border-radius: var(--r);
+  padding: 12px 15px;
+  font-size: 13px;
+  color: var(--g1);
+  line-height: 1.65;
+}
+.tip-box strong { color: var(--blue); display: block; margin-bottom: 5px; font-size: 13px; }
+.tip-box code { color: var(--blue); font-family: var(--mono); font-size: 12px; }
+
+/* ══════════════════════════════
+   GAME SCREEN — SPLIT LAYOUT
+══════════════════════════════ */
+#screen-game { overflow: hidden; height: calc(100vh - 56px); }
+
+.game-layout { display: flex; height: 100%; }
+
+/* Left: article */
+.panel-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--border);
+}
+
+.title-strip {
+  background: var(--surf1);
+  border-bottom: 1px solid var(--border);
+  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 46px;
+  flex-shrink: 0;
+}
+.strip-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--g2); margin-right: 3px; flex-shrink: 0; }
+
+.t-word {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  transition: all 0.3s;
+  letter-spacing: 0.3px;
+}
+.t-word.masked { background: var(--g4); color: var(--g4); }
+.t-word.found  { background: rgba(48,217,136,0.13); color: var(--green); }
+.t-punct       { color: var(--g2); font-weight: 700; font-size: 14px; }
+
+.progress-bar { height: 3px; background: var(--g4); flex-shrink: 0; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width 0.5s ease; width: 0%; }
+
+.article-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 18px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  background: #2e2e3c;
+  border-radius: 0;
+}
+.article-scroll::-webkit-scrollbar { width: 4px; }
+.article-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+#article-text { font-size: 14px; line-height: 2.5; word-break: break-word; }
+
+/* Word tokens */
+.w {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin: 1px 0;
+  vertical-align: baseline;
+  position: relative;
+  transition: background 0.4s, color 0.4s;
+  cursor: default;
+  border: 1px solid transparent;
+}
+.w.exact  { background: transparent; color: var(--white); font-weight: 700; border-color: transparent; }
+.w.proche { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
+.w.tiede  { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
+.w.froid  { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
+.w.hidden { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
+
+/* Mot proposé proche : orange sur fond sombre, même si bloc encore masqué */
+.w.has-proposal { color: var(--amber) !important; font-weight: 700; cursor: help; background: var(--c-hidden) !important; border-color: rgba(245,166,35,0.20) !important; }
+
+.w.hidden:hover::after {
+  content: attr(data-len) ' lettres';
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surf3);
+  color: var(--g1);
+  font-size: 11px;
+  font-family: var(--font);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+
+.punct { color: var(--g2); font-size: 14px; }
+
+/* Right: controls */
+.panel-right {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--surf1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.input-section {
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.input-section label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--g2); display: block; margin-bottom: 7px; }
+
+.input-row { display: flex; gap: 7px; }
+
+#word-input {
+  flex: 1;
+  background: var(--surf2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 13px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-width: 0;
+}
+#word-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+#word-input::placeholder { color: var(--g2); font-weight: 400; }
+#word-input:disabled { opacity: 0.45; }
+
+#btn-send {
+  background: var(--blue);
+  border: none;
+  border-radius: var(--r-sm);
+  color: #fff;
+  font-size: 19px;
+  font-weight: 700;
+  width: 46px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: var(--tr);
+  display: flex; align-items: center; justify-content: center;
+}
+#btn-send:hover  { background: #6aa4ff; }
+#btn-send:active { transform: scale(0.94); }
+#btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.feedback-bar {
+  margin-top: 9px;
+  min-height: 34px;
+  padding: 7px 11px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+}
+.fb-idle    { background: var(--surf2); color: var(--g2); }
+.fb-success { background: rgba(48,217,136,0.10); color: var(--green); border: 1px solid rgba(48,217,136,0.2); }
+.fb-warm    { background: rgba(245,166,35,0.09); color: var(--amber); border: 1px solid rgba(245,166,35,0.18); }
+.fb-cold    { background: var(--surf2); color: var(--g1); }
+.fb-error   { background: rgba(240,92,92,0.09);  color: var(--red); }
+
+.stats-row  { display: flex; gap: 7px; margin-top: 9px; }
+.stat-pill  { flex: 1; background: var(--surf2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 6px 8px; text-align: center; }
+.stat-pill .n { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--blue); display: block; }
+.stat-pill .l { font-size: 9px; color: var(--g2); text-transform: uppercase; letter-spacing: 1px; display: block; margin-top: 1px; }
+
+.history-section { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.history-section h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--g2); padding: 10px 14px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+
+.history-list {
+  flex: 1; overflow-y: auto; padding: 7px;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.history-list::-webkit-scrollbar { width: 3px; }
+
+.guess-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: var(--surf2);
+  border: 1px solid var(--border);
+  animation: fadeIn 0.18s ease;
+  font-size: 13px;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:translateY(0); } }
+
+.guess-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.guess-item.hit  .guess-dot { background: var(--green); }
+.guess-item.miss .guess-dot { background: var(--g2); }
+.guess-item.warm .guess-dot { background: var(--amber); }
+
+.guess-word { flex: 1; font-family: var(--mono); font-weight: 700; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.guess-badge { font-size: 11px; color: var(--g2); font-weight: 600; flex-shrink: 0; }
+.guess-item.hit  .guess-badge { color: var(--green); }
+.guess-item.warm .guess-badge { color: var(--amber); }
+
+/* ── MOBILE ── */
+@media (max-width: 680px) {
+  #screen-game { height: calc(100vh - 56px); overflow: hidden; }
+  .game-layout  { flex-direction: column; }
+  .panel-text   { flex: 1; border-right: none; border-bottom: 1px solid var(--border); min-height: 0; }
+  .panel-right  { width: 100%; flex-shrink: 0; max-height: 46vh; }
+  .history-section { max-height: 110px; }
+  .article-scroll { padding: 12px 14px; background: #2e2e3c; }
+  #article-text   { font-size: 13px; line-height: 2.3; }
+  .input-section  { padding: 10px 12px; }
+}
+
+/* ══════════════════════════════
+   HISTORY SCREEN
+══════════════════════════════ */
+#screen-history { overflow-y: auto; padding: 22px 16px; align-items: center; }
+.history-page { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 10px; }
+.history-page h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+
+.h-item { background: var(--surf1); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 15px; display: flex; align-items: center; gap: 11px; }
+.h-status { font-size: 20px; flex-shrink: 0; }
+.h-info { flex: 1; min-width: 0; }
+.h-page { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-meta { font-size: 12px; color: var(--g1); margin-top: 2px; }
+.h-tries { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--blue); flex-shrink: 0; }
+
+/* ══════════════════════════════
+   VICTORY
+══════════════════════════════ */
+#victory {
+  display: none; position: fixed; inset: 0;
+  background: rgba(5,5,8,0.86);
+  backdrop-filter: blur(12px);
+  z-index: 500; align-items: center; justify-content: center; padding: 20px;
+}
+#victory.show { display: flex; }
+
+.v-card {
+  background: var(--surf1);
+  border: 1px solid var(--green);
+  border-radius: 20px;
+  padding: 32px 26px;
+  max-width: 400px; width: 100%;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(48,217,136,0.1);
+  animation: vPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes vPop { from { opacity:0; transform:scale(0.65); } to { opacity:1; transform:scale(1); } }
+
+.v-trophy   { font-size: 60px; display: block; margin-bottom: 14px; }
+.v-bravo    { font-size: 28px; font-weight: 800; color: var(--green); }
+.v-sub      { font-size: 13px; color: var(--g1); margin: 5px 0 10px; }
+.v-page     { font-size: 19px; font-weight: 700; margin: 0 0 18px; }
+
+.v-stats { display: flex; gap: 14px; justify-content: center; margin-bottom: 14px; }
+.v-stat .n { font-family: var(--mono); font-size: 34px; font-weight: 700; color: var(--blue); display: block; line-height: 1; }
+.v-stat .l { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--g2); display: block; margin-top: 3px; }
+
+.v-emojis { font-size: 17px; letter-spacing: 1px; min-height: 26px; margin: 10px 0 18px; word-break: break-all; }
+.v-btns { display: flex; gap: 9px; }
+.v-btn {
+  flex: 1; padding: 12px; border-radius: 9px;
+  font-family: var(--font); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: var(--tr);
+  border: 1px solid var(--border); background: var(--surf2); color: var(--white);
+}
+.v-btn:hover { border-color: var(--blue); color: var(--blue); }
+.v-btn.primary { background: var(--blue); color: #fff; border-color: transparent; }
+.v-btn.primary:hover { background: #6aa4ff; color: #fff; }
+
+/* ── Loading ── */
+.loading-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--g1); }
+.spinner { width: 38px; height: 38px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <div class="logo">📖 Péd<em>antix</em></div>
+    <div id="topbar-counter" style="display:none">Essai <strong id="tc-num">0</strong></div>
+    <button id="btn-back-top" style="display:none" onclick="goMenu()">← Menu</button>
+  </div>
+
+  <!-- ══ MENU ══ -->
+  <div class="screen active" id="screen-menu">
+    <div class="menu-inner">
+      <div class="menu-hero">
+        <h1>Pédantix</h1>
+        <p>Devinez la page Wikipédia en proposant des mots</p>
+      </div>
+
+      <button class="mode-card daily" onclick="startGame('daily')">
+        <div class="mode-icon">🗓️</div>
+        <div class="mode-text"><strong>Partie du Jour</strong><span>La même page pour tous · Change à midi</span></div>
+        <span class="mode-chevron">›</span>
+      </button>
+
+      <button class="mode-card random" onclick="startGame('random')">
+        <div class="mode-icon">🎲</div>
+        <div class="mode-text"><strong>Partie Aléatoire</strong><span>Jouez autant de fois que vous voulez par jour</span></div>
+        <span class="mode-chevron">›</span>
+      </button>
+
+
+
+      <button class="mode-card history" onclick="showHistory()">
+        <div class="mode-icon">📊</div>
+        <div class="mode-text"><strong>Historique</strong><span>Vos parties terminées</span></div>
+        <span class="mode-chevron">›</span>
+      </button>
+
+      <div class="legend-box">
+        <h4>Légende</h4>
+        <div class="legend-row">
+          <div class="leg"><div class="ls ls-exact"></div>Révélé</div>
+          <div class="leg"><div class="ls ls-proche"></div>Très proche</div>
+          <div class="leg"><div class="ls ls-tiede"></div>Proche</div>
+          <div class="leg"><div class="ls ls-froid"></div>Peu proche</div>
+          <div class="leg"><div class="ls ls-hidden"></div>Masqué (survol = nb lettres)</div>
+        </div>
+      </div>
+
+      <div class="tip-box">
+        <strong>📱 Jouer sur téléphone Android</strong>
+        Connectez votre téléphone au <strong style="color:var(--white)">même Wi-Fi</strong> que votre PC, puis ouvrez Chrome et tapez :<br>
+        <code id="mobile-url">http://[IP-DU-PC]:8000</code><br>
+        <span style="font-size:12px;color:var(--g2)">L'IP locale s'affiche dans le terminal au démarrage de server.py</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ GAME ══ -->
+  <div class="screen" id="screen-game">
+    <div class="loading-state" id="g-loading">
+      <div class="spinner"></div>
+      <span>Chargement de la page Wikipédia…</span>
+    </div>
+    <div class="game-layout" id="g-content" style="display:none">
+      <div class="panel-text">
+        <div class="title-strip" id="title-strip">
+          <span class="strip-lbl">Titre :</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+        <div class="article-scroll">
+          <div id="article-text"></div>
+        </div>
+      </div>
+      <div class="panel-right">
+        <div class="input-section">
+          <label>Proposer un mot</label>
+          <div class="input-row">
+            <input type="text" id="word-input" placeholder="Écrivez un mot…"
+                   autocomplete="off" autocorrect="off" spellcheck="false"
+                   onkeydown="if(event.key==='Enter') sendGuess()">
+            <button id="btn-send" onclick="sendGuess()">→</button>
+          </div>
+          <div class="feedback-bar fb-idle" id="feedback">Proposez votre premier mot…</div>
+          <div class="stats-row">
+            <div class="stat-pill"><span class="n" id="s-tries">0</span><span class="l">Essais</span></div>
+            <div class="stat-pill"><span class="n" id="s-words">0%</span><span class="l">Révélés</span></div>
+            <div class="stat-pill"><span class="n" id="s-title">0%</span><span class="l">Titre</span></div>
+          </div>
+        </div>
+        <div class="history-section">
+          <h3>Essais</h3>
+          <div class="history-list" id="guess-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HISTORY ══ -->
+  <div class="screen" id="screen-history">
+    <div class="history-page">
+      <h2>📊 Historique</h2>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- VICTORY -->
+<div id="victory">
+  <div class="v-card">
+    <span class="v-trophy">🏆</span>
+    <div class="v-bravo">Bravo !</div>
+    <div class="v-sub">Vous avez trouvé la page !</div>
+    <div class="v-page" id="v-page"></div>
+    <div class="v-stats">
+      <div class="v-stat"><span class="n" id="v-tries">0</span><span class="l">Essais</span></div>
+      <div class="v-stat"><span class="n" id="v-time">0m</span><span class="l">Temps</span></div>
+    </div>
+    <div class="v-emojis" id="v-emojis"></div>
+    <div class="v-btns">
+      <button class="v-btn" onclick="closeVictory(); goMenu()">🏠 Menu</button>
+      <button class="v-btn primary" onclick="closeVictory(); startGame('random')">🎲 Rejouer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SESSION = 'g' + Math.random().toString(36).slice(2,9);
+let guessEmojis = [], active = false, currentMode = 'daily';
+
+async function api(path, data={}) {
+  const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...data, session:SESSION})});
+  return r.json();
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  const inGame = name==='game';
+  document.getElementById('btn-back-top').style.display = name!=='menu' ? 'flex' : 'none';
+  document.getElementById('topbar-counter').style.display = inGame ? 'flex' : 'none';
+}
+function goMenu() { showScreen('menu'); }
+
+
+
+async function startGame(mode, custom=null) {
+  currentMode=mode; guessEmojis=[]; active=false;
+  showScreen('game');
+  document.getElementById('g-loading').style.display='flex';
+  document.getElementById('g-content').style.display='none';
+  document.getElementById('guess-list').innerHTML='';
+  document.getElementById('tc-num').textContent='0';
+  ['s-tries','s-words','s-title'].forEach(id=>document.getElementById(id).textContent=id==='s-tries'?'0':'0%');
+  setFeedback('idle','Proposez votre premier mot…');
+  document.getElementById('prog-fill').style.width='0%';
+
+  const resp = await api('/api/new_game',{mode,custom});
+  document.getElementById('g-loading').style.display='none';
+  document.getElementById('g-content').style.display='flex';
+
+  renderTitle(resp.title_tokens);
+  renderArticle(resp.tokens);
+  active=true;
+  setTimeout(()=>{
+    const inp=document.getElementById('word-input');
+    inp.focus();
+  }, 300);
+}
+
+async function sendGuess() {
+  if(!active) return;
+  const inp=document.getElementById('word-input');
+  const word=inp.value.trim(); if(!word) return;
+  inp.value='';
+  document.getElementById('btn-send').disabled=true; inp.disabled=true;
+
+  const resp = await api('/api/guess',{word});
+  const res=resp.result;
+  document.getElementById('btn-send').disabled=false; inp.disabled=false;
+  // Remettre le focus sans fermer le clavier sur mobile
+  inp.focus();
+  // Sur iOS, on force le curseur en fin de champ pour maintenir le clavier ouvert
+  const len = inp.value.length;
+  inp.setSelectionRange(len, len);
+
+  document.getElementById('tc-num').textContent=res.guess_count;
+  document.getElementById('s-tries').textContent=res.guess_count;
+
+  const stats=resp.stats;
+  const pct=Math.round(stats.words_revealed/Math.max(stats.words_total,1)*100);
+  document.getElementById('s-words').textContent=pct+'%';
+  document.getElementById('s-title').textContent=(res.title_progress||0)+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+
+  renderTitle(resp.title_tokens);
+  renderArticle(resp.tokens);
+
+  if(res.matches>0) {
+    setFeedback('success',`✅ "${word}" — +${res.matches} mot${res.matches>1?'s':''} révélé${res.matches>1?'s':''} !`);
+    guessEmojis.push('🟩');
+  } else if(res.proximity_results&&res.proximity_results.length>0) {
+    const best=res.proximity_results.reduce((a,b)=>a.score>b.score?a:b);
+    const msg=best.proximity==='proche'?'🔥 Très proche…':best.proximity==='tiede'?'🌡️ Proche…':'💧 Un peu froid…';
+    // Uniquement le niveau de proximité, sans révéler le mot cible ni le mot proposé
+    setFeedback('warm', msg);
+    guessEmojis.push('🟧');
+  } else {
+    setFeedback('cold',`❌ "${word}" — aucun résultat`);
+    guessEmojis.push('🟥');
+  }
+
+  addGuess(word, res.matches, res.proximity_results);
+  if(res.won) { active=false; setTimeout(()=>showVictory(stats,res),400); }
+}
+
+function renderTitle(tokens) {
+  const strip=document.getElementById('title-strip');
+  strip.innerHTML='<span class="strip-lbl">Titre :</span>';
+  tokens.forEach(t=>{
+    const el=document.createElement('span');
+    if(t.type==='punct') { el.className='t-punct'; el.textContent=t.text; }
+    else {
+      el.className='t-word '+(t.revealed?'found':'masked');
+      el.textContent=t.revealed?t.text:'█'.repeat(t.length||1);
+    }
+    strip.appendChild(el);
+  });
+}
+
+const PROX={exact:'exact',proche:'proche',tiede:'tiede',froid:'froid',rien:'hidden'};
+function renderArticle(tokens) {
+  const art=document.getElementById('article-text');
+  art.innerHTML='';
+  tokens.forEach(t=>{
+    if(t.type==='punct') {
+      const s=document.createElement('span'); s.className='punct'; s.textContent=t.text; art.appendChild(s);
+    } else {
+      const prox = PROX[t.proximity] || 'hidden';
+      const s=document.createElement('span');
+      s.className='w ' + prox;
+      if(t.revealed) {
+        // Mot exact trouvé : afficher le vrai mot en blanc
+        s.textContent=t.text;
+      } else if(prox !== 'hidden' && t.best_word) {
+        // Mot proche : afficher le mot proposé en orange par-dessus le bloc
+        s.textContent = t.best_word;
+        s.classList.add('has-proposal');
+        s.setAttribute('title', t.length + ' lettres dans le texte');
+      } else {
+        // Mot non trouvé : bloc sombre de la bonne longueur
+        s.textContent='█'.repeat(t.length||1);
+        s.setAttribute('data-len',t.length||'?');
+      }
+      art.appendChild(s);
+    }
+  });
+}
+
+function addGuess(word, matches, prox) {
+  const list=document.getElementById('guess-list');
+  const el=document.createElement('div');
+  let cls='miss', badge='';
+  if(matches>0) { cls='hit'; badge='+'+matches; }
+  else if(prox&&prox.length>0) { cls='warm'; badge='~'; }
+  el.className=`guess-item ${cls}`;
+  el.innerHTML=`<div class="guess-dot"></div><div class="guess-word">${esc(word)}</div><div class="guess-badge">${badge}</div>`;
+  list.insertBefore(el, list.firstChild);
+}
+
+function setFeedback(type, msg) {
+  const fb=document.getElementById('feedback');
+  fb.textContent=msg;
+  fb.className='feedback-bar fb-'+(type==='success'?'success':type==='warm'?'warm':type==='error'?'error':type==='cold'?'cold':'idle');
+}
+
+function showVictory(stats, res) {
+  document.getElementById('v-page').textContent=stats.title;
+  document.getElementById('v-tries').textContent=res.guess_count;
+  const e=stats.elapsed_seconds;
+  document.getElementById('v-time').textContent=`${Math.floor(e/60)}m${e%60}s`;
+  document.getElementById('v-emojis').textContent=guessEmojis.slice(-24).join('');
+  document.getElementById('victory').classList.add('show');
+}
+function closeVictory() { document.getElementById('victory').classList.remove('show'); }
+
+async function showHistory() {
+  showScreen('history');
+  const resp=await api('/api/history');
+  const list=document.getElementById('hist-list');
+  list.innerHTML='';
+  if(!resp.history||!resp.history.length) {
+    list.innerHTML='<p style="color:var(--g1);text-align:center;padding:30px 0">Aucune partie terminée.</p>'; return;
+  }
+  [...resp.history].reverse().forEach(e=>{
+    const el=document.createElement('div'); el.className='h-item';
+    const t=e.time_seconds; const ts=`${Math.floor(t/60)}m${t%60}s`;
+    el.innerHTML=`<div class="h-status">${e.won?'✅':'❌'}</div><div class="h-info"><div class="h-page">${esc(e.page)}</div><div class="h-meta">${e.date.slice(0,10)} · ${e.mode} · ${ts}</div></div><div class="h-tries">${e.guesses}</div>`;
+    list.appendChild(el);
+  });
+}
+
+function esc(s) { return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeVictory(); });
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
