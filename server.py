@@ -175,6 +175,38 @@ class GameHandler(BaseHTTPRequestHandler):
         elif p == '/api/history':
             self._json({'history': manager.get_history()[-20:]})
 
+        elif p == '/api/reveal':
+            # Retourne tous les vrais mots (pour affichage fin de partie)
+            session = data.get('session', 'default')
+            game = GAMES.get(session)
+            if not game:
+                self._json({'error': 'no game'})
+                return
+            # Construire les tokens avec le vrai texte pour chaque mot
+            full_tokens = []
+            for token in game.tokens:
+                if token['type'] == 'punct':
+                    full_tokens.append({'type': 'punct', 'text': token['text']})
+                else:
+                    full_tokens.append({
+                        'type': 'word',
+                        'real_text': token['text'],  # vrai texte toujours présent
+                        'text': token['text'],
+                        'revealed': True,
+                        'proximity': 'exact',
+                        'length': len(token['text']),
+                    })
+            # Titre complet révélé
+            title_tokens = []
+            import re as _re
+            for match in _re.finditer(r"[a-zA-ZÀ-ÿ0-9]+|[^a-zA-ZÀ-ÿ0-9]+", game.title):
+                chunk = match.group()
+                if _re.match(r"^[a-zA-ZÀ-ÿ0-9]", chunk):
+                    title_tokens.append({'type': 'word', 'text': chunk, 'revealed': True, 'length': len(chunk)})
+                else:
+                    title_tokens.append({'type': 'punct', 'text': chunk})
+            self._json({'tokens': full_tokens, 'title_tokens': title_tokens})
+
         else:
             self.send_response(404)
             self.end_headers()
