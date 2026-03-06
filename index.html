@@ -291,6 +291,7 @@ body {
   border: 1px solid transparent;
 }
 .w.exact  { background: transparent; color: var(--white); font-weight: 700; border-color: transparent; }
+.w.exact.just-revealed { color: var(--green) !important; font-weight: 700; }
 .w.proche { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
 .w.tiede  { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
 .w.froid  { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
@@ -499,6 +500,23 @@ body {
 .v-btn.primary { background: var(--blue); color: #fff; border-color: transparent; }
 .v-btn.primary:hover { background: #6aa4ff; color: #fff; }
 
+.v-btn-wiki {
+  width: 100%;
+  margin-top: 9px;
+  padding: 11px;
+  border-radius: 9px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--tr);
+  border: 1px solid rgba(77,142,245,0.35);
+  background: rgba(77,142,245,0.08);
+  color: var(--blue);
+  text-align: center;
+}
+.v-btn-wiki:hover { background: rgba(77,142,245,0.16); border-color: var(--blue); }
+
 /* ── Loading ── */
 .loading-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--g1); }
 .spinner { width: 38px; height: 38px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
@@ -628,6 +646,9 @@ body {
       <button class="v-btn" onclick="closeVictory(); goMenu()">🏠 Menu</button>
       <button class="v-btn primary" onclick="closeVictory(); startGame('random')">🎲 Rejouer</button>
     </div>
+    <button class="v-btn-wiki" id="v-wiki-btn" onclick="revealAll()">
+      📖 Lire la page complète
+    </button>
   </div>
 </div>
 
@@ -658,6 +679,7 @@ async function startGame(mode, custom=null) {
   document.getElementById('g-content').style.display='none';
   document.getElementById('guess-list').innerHTML='';
   document.getElementById('tc-num').textContent='0';
+  lastRevealedWords = new Set();
   ['s-tries','s-words','s-title'].forEach(id=>document.getElementById(id).textContent=id==='s-tries'?'0':'0%');
   setFeedback('idle','Proposez votre premier mot…');
   document.getElementById('prog-fill').style.width='0%';
@@ -701,7 +723,20 @@ async function sendGuess() {
   document.getElementById('prog-fill').style.width=pct+'%';
 
   renderTitle(resp.title_tokens);
-  renderArticle(resp.tokens);
+  // Collecter les mots nouvellement révélés (pour les afficher en vert)
+  const newlyRevealed = new Set();
+  if(res.matches > 0) {
+    resp.tokens.forEach(t => {
+      if(t.revealed && t.text) newlyRevealed.add(t.text);
+    });
+    // Soustraire ceux déjà révélés avant (lastRevealedWords contient les anciens)
+    // En pratique : on marque TOUS les revealed au dernier coup
+    // On garde en mémoire les revealed du coup précédent pour ne pas les re-verdir
+    newlyRevealed.forEach(w => { if(lastRevealedWords.has(w)) newlyRevealed.delete(w); });
+    // Mettre à jour la mémoire des mots révélés
+    resp.tokens.forEach(t => { if(t.revealed && t.text) lastRevealedWords.add(t.text); });
+  }
+  renderArticle(resp.tokens, newlyRevealed);
 
   if(res.matches>0) {
     setFeedback('success',`✅ "${word}" — +${res.matches} mot${res.matches>1?'s':''} révélé${res.matches>1?'s':''} !`);
@@ -722,6 +757,7 @@ async function sendGuess() {
 }
 
 function renderTitle(tokens) {
+  window._lastTitleTokens = tokens; // pour revealAll()
   const strip=document.getElementById('title-strip');
   strip.innerHTML='<span class="strip-lbl">Titre :</span>';
   tokens.forEach(t=>{
@@ -736,7 +772,11 @@ function renderTitle(tokens) {
 }
 
 const PROX={exact:'exact',proche:'proche',tiede:'tiede',froid:'froid',rien:'hidden'};
-function renderArticle(tokens) {
+// Ensemble des textes de mots révélés au dernier essai (pour les afficher en vert)
+let lastRevealedWords = new Set();
+
+function renderArticle(tokens, newlyRevealed = new Set()) {
+  window._lastTokens = tokens; // garder une référence pour revealAll()
   const art=document.getElementById('article-text');
   art.innerHTML='';
   tokens.forEach(t=>{
@@ -747,15 +787,16 @@ function renderArticle(tokens) {
       const s=document.createElement('span');
       s.className='w ' + prox;
       if(t.revealed) {
-        // Mot exact trouvé : afficher le vrai mot en blanc
         s.textContent=t.text;
+        // Vert si révélé lors du dernier essai, blanc sinon
+        if(newlyRevealed.has(t.text)) {
+          s.classList.add('just-revealed');
+        }
       } else if(prox !== 'hidden' && t.best_word) {
-        // Mot proche : afficher le mot proposé en orange par-dessus le bloc
         s.textContent = t.best_word;
         s.classList.add('has-proposal');
         s.setAttribute('title', t.length + ' lettres dans le texte');
       } else {
-        // Mot non trouvé : bloc sombre de la bonne longueur
         s.textContent='█'.repeat(t.length||1);
         s.setAttribute('data-len',t.length||'?');
       }
@@ -781,13 +822,38 @@ function setFeedback(type, msg) {
   fb.className='feedback-bar fb-'+(type==='success'?'success':type==='warm'?'warm':type==='error'?'error':type==='cold'?'cold':'idle');
 }
 
+let currentWikiTitle = '';
+
 function showVictory(stats, res) {
+  currentWikiTitle = stats.title;
   document.getElementById('v-page').textContent=stats.title;
   document.getElementById('v-tries').textContent=res.guess_count;
   const e=stats.elapsed_seconds;
   document.getElementById('v-time').textContent=`${Math.floor(e/60)}m${e%60}s`;
   document.getElementById('v-emojis').textContent=guessEmojis.slice(-24).join('');
   document.getElementById('victory').classList.add('show');
+}
+
+async function revealAll() {
+  closeVictory();
+  // Appeler le serveur pour obtenir tous les vrais mots
+  const resp = await api('/api/reveal', {});
+  if(!resp || !resp.tokens) return;
+  // Forcer tous les mots en révélé
+  const revealed = resp.tokens.map(t => ({
+    ...t,
+    revealed: t.type === 'word' ? true : t.revealed,
+    proximity: t.type === 'word' ? 'exact' : (t.proximity || 'exact'),
+    text: t.real_text || t.text, // utiliser le vrai texte
+  }));
+  const titleRevealed = resp.title_tokens.map(t => ({...t, revealed: true}));
+  renderArticle(revealed, new Set());
+  renderTitle(titleRevealed);
+  // Désactiver la saisie et afficher un message
+  document.getElementById('word-input').disabled = true;
+  document.getElementById('btn-send').disabled = true;
+  document.getElementById('word-input').placeholder = '— Partie terminée · Texte révélé —';
+  setFeedback('success', '📖 Texte complet révélé !');
 }
 function closeVictory() { document.getElementById('victory').classList.remove('show'); }
 
