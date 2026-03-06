@@ -270,7 +270,7 @@ body {
   padding: 18px 18px 24px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
-  background: #2e2e3c;
+  background: #ffffff;
   border-radius: 0;
 }
 .article-scroll::-webkit-scrollbar { width: 4px; }
@@ -292,7 +292,7 @@ body {
   cursor: default;
   border: 1px solid transparent;
 }
-.w.exact  { background: transparent; color: var(--white); font-weight: 700; border-color: transparent; }
+.w.exact  { background: transparent; color: #111111; font-weight: 700; border-color: transparent; }
 .w.exact.just-revealed { color: var(--green) !important; font-weight: 700; }
 .w.proche { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
 .w.tiede  { background: var(--c-hidden); color: var(--c-hidden); border-color: var(--g5); cursor: help; }
@@ -322,7 +322,7 @@ body {
   box-shadow: 0 4px 14px rgba(0,0,0,0.5);
 }
 
-.punct { color: var(--g2); font-size: 14px; }
+.punct { color: #444444; font-size: 14px; }
 
 /* Right: controls */
 .panel-right {
@@ -439,7 +439,7 @@ body {
   .panel-text   { flex: 1; border-right: none; border-bottom: 1px solid var(--border); min-height: 0; }
   .panel-right  { width: 100%; flex-shrink: 0; max-height: 46vh; }
   .history-section { max-height: 110px; }
-  .article-scroll { padding: 12px 14px; background: #2e2e3c; }
+  .article-scroll { padding: 12px 14px; background: #ffffff; }
   #article-text   { font-size: 13px; line-height: 2.3; }
   .input-section  { padding: 10px 12px; }
 }
@@ -448,6 +448,60 @@ body {
    HISTORY SCREEN
 ══════════════════════════════ */
 #screen-history { overflow-y: auto; padding: 22px 16px; align-items: center; }
+
+/* ══ LEVELS SCREEN ══ */
+#screen-levels { overflow-y: auto; padding: 0; }
+.levels-header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surf1); border-bottom: 1px solid var(--border);
+  padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+}
+.levels-header h2 { font-size: 18px; font-weight: 800; flex: 1; }
+.levels-progress-text { font-size: 12px; color: var(--g1); font-family: var(--mono); }
+.levels-progress-bar { height: 3px; background: var(--border); flex-shrink: 0; }
+.levels-progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width 0.5s; }
+
+.levels-grid {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .levels-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 12px; }
+}
+
+.lvl-btn {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surf1);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  color: var(--g2); cursor: default;
+  transition: var(--tr);
+  position: relative;
+  gap: 2px;
+}
+.lvl-btn.done {
+  background: rgba(48,217,136,0.10);
+  border-color: rgba(48,217,136,0.3);
+  color: var(--green);
+  cursor: pointer;
+}
+.lvl-btn.done:hover { background: rgba(48,217,136,0.18); transform: scale(1.05); }
+.lvl-btn.current {
+  background: rgba(77,142,245,0.15);
+  border-color: var(--blue);
+  color: var(--blue);
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(77,142,245,0.2);
+}
+.lvl-btn.current:hover { background: rgba(77,142,245,0.22); transform: scale(1.05); }
+.lvl-btn.locked { opacity: 0.35; }
+.lvl-btn .lvl-num { font-size: 13px; line-height: 1; }
+.lvl-btn .lvl-check { font-size: 10px; line-height: 1; }
 .history-page { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 10px; }
 .history-page h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
 
@@ -551,18 +605,24 @@ body {
         <span class="mode-chevron">›</span>
       </button>
 
-      <button class="mode-card random" id="btn-random" onclick="resumeOrStart('random')">
-        <div class="mode-icon">🎲</div>
+      <button class="mode-card random" id="btn-campaign" onclick="resumeOrStart('campaign')">
+        <div class="mode-icon">🏆</div>
         <div class="mode-text">
-          <strong>Partie Aléatoire</strong>
-          <span id="random-sub">Jouez autant de fois que vous voulez par jour</span>
+          <strong>Campagne</strong>
+          <span id="campaign-sub">500 niveaux · Progressez à votre rythme</span>
         </div>
         <span class="mode-chevron">›</span>
       </button>
 
 
 
-      <button class="mode-card history" onclick="showHistory()">
+      <button class="mode-card history" onclick="showLevels()">
+        <div class="mode-icon">🗺️</div>
+        <div class="mode-text"><strong>Liste des niveaux</strong><span id="levels-menu-sub">Voir tous les niveaux de la campagne</span></div>
+        <span class="mode-chevron">›</span>
+      </button>
+
+      <button class="mode-card history" onclick="showHistory()" style="background:var(--surf1)">
         <div class="mode-icon">📊</div>
         <div class="mode-text"><strong>Historique</strong><span>Vos parties terminées</span></div>
         <span class="mode-chevron">›</span>
@@ -627,6 +687,17 @@ body {
 
 </div>
 
+  <!-- ══ LEVELS ══ -->
+  <div class="screen" id="screen-levels">
+    <div class="levels-header">
+      <button onclick="goMenu()" style="background:none;border:1px solid var(--border);color:var(--g1);font-family:var(--font);font-size:13px;font-weight:600;padding:6px 13px;border-radius:var(--r-sm);cursor:pointer">← Menu</button>
+      <h2>🏆 Niveaux</h2>
+      <span class="levels-progress-text" id="lvl-progress-text">0 / 500</span>
+    </div>
+    <div class="levels-progress-bar"><div class="levels-progress-fill" id="lvl-progress-fill" style="width:0%"></div></div>
+    <div class="levels-grid" id="levels-grid"></div>
+  </div>
+
 <!-- VICTORY -->
 <div id="victory">
   <div class="v-card">
@@ -639,9 +710,9 @@ body {
       <div class="v-stat"><span class="n" id="v-time">0m</span><span class="l">Temps</span></div>
     </div>
     <div class="v-emojis" id="v-emojis"></div>
-    <div class="v-btns">
+    <div class="v-btns" id="v-btns-main">
       <button class="v-btn" onclick="closeVictory(); goMenu()">🏠 Menu</button>
-      <button class="v-btn primary" onclick="closeVictory(); startGame('random')">🎲 Rejouer</button>
+      <button class="v-btn primary" id="v-next-btn" onclick="onVictoryNext()">▶ Niveau suivant</button>
     </div>
     <button class="v-btn-wiki" id="v-wiki-btn" onclick="revealAll()">
       📖 Lire la page complète
@@ -657,9 +728,10 @@ let guessEmojis = [], active = false, currentMode = 'daily';
 // { daily: {started: bool, won: bool, guessCount: int},
 //   random: {started: bool, won: bool, guessCount: int} }
 const gameState = {
-  daily:  { started: false, won: false, guessCount: 0 },
-  random: { started: false, won: false, guessCount: 0 },
+  daily:    { started: false, won: false, guessCount: 0 },
+  campaign: { started: false, won: false, guessCount: 0, level: 1 },
 };
+let campaignStats = { current_level: 1, completed: 0, total: 500, percent: 0 };
 
 async function api(path, data={}) {
   const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...data, session:SESSION})});
@@ -670,7 +742,9 @@ function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   const inGame = name==='game';
-  document.getElementById('btn-back-top').style.display = name!=='menu' ? 'flex' : 'none';
+  // Masquer la topbar sur l'écran levels (a sa propre nav)
+  const hideTopbarNav = (name === 'levels');
+  document.getElementById('btn-back-top').style.display = (name!=='menu' && !hideTopbarNav) ? 'flex' : 'none';
   document.getElementById('topbar-counter').style.display = inGame ? 'flex' : 'none';
 }
 function goMenu() {
@@ -682,24 +756,29 @@ function goMenu() {
 function updateMenuButtons() {
   // Partie du jour
   const dailySub = document.getElementById('daily-sub');
-  if(gameState.daily.started && !gameState.daily.won) {
-    dailySub.innerHTML = `<span class="resume-badge">▶ En cours</span> · ${gameState.daily.guessCount} essai${gameState.daily.guessCount>1?'s':''}`;
-  } else if(gameState.daily.won) {
-    dailySub.innerHTML = `<span class="resume-badge" style="background:rgba(77,142,245,0.15);color:var(--blue);border-color:rgba(77,142,245,0.3)">✓ Terminée</span>`;
-  } else {
-    dailySub.textContent = 'La même page pour tous · Change à midi';
+  if(dailySub) {
+    if(gameState.daily.started && !gameState.daily.won) {
+      dailySub.innerHTML = `<span class="resume-badge">▶ En cours</span> · ${gameState.daily.guessCount} essai${gameState.daily.guessCount>1?'s':''}`;
+    } else if(gameState.daily.won) {
+      dailySub.innerHTML = `<span class="resume-badge" style="background:rgba(77,142,245,0.15);color:var(--blue);border-color:rgba(77,142,245,0.3)">✓ Terminée</span>`;
+    } else {
+      dailySub.textContent = 'La même page pour tous · Change à midi';
+    }
   }
-  // Partie aléatoire
-  const randomSub = document.getElementById('random-sub');
-  if(gameState.random.started && !gameState.random.won) {
-    randomSub.innerHTML = `<span class="resume-badge">▶ En cours</span> · ${gameState.random.guessCount} essai${gameState.random.guessCount>1?'s':''}`;
-  } else {
-    randomSub.textContent = 'Jouez autant de fois que vous voulez par jour';
+  // Campagne
+  const campSub = document.getElementById('campaign-sub');
+  if(campSub) {
+    const lvl = campaignStats.current_level;
+    const pct = campaignStats.percent;
+    if(gameState.campaign.started && !gameState.campaign.won) {
+      campSub.innerHTML = `<span class="resume-badge">▶ En cours</span> · Niveau ${gameState.campaign.level} · ${gameState.campaign.guessCount} essai${gameState.campaign.guessCount>1?'s':''}`;
+    } else {
+      campSub.innerHTML = `Niveau ${lvl}/500 · <span style="color:var(--green)">${pct}% complété</span>`;
+    }
   }
 }
 
 function resumeOrStart(mode) {
-  // Si une partie est en cours pour ce mode, reprendre
   if(gameState[mode] && gameState[mode].started && !gameState[mode].won) {
     currentMode = mode;
     showScreen('game');
@@ -733,11 +812,11 @@ function initQR() {
 
 
 
-async function startGame(mode, custom=null) {
+async function startGame(mode, levelOverride=null) {
   currentMode=mode; guessEmojis=[]; active=false;
-  // Marquer comme nouvelle partie (réinitialise l'en-cours)
-  if(mode==='daily' || mode==='random') {
-    gameState[mode] = { started: true, won: false, guessCount: 0 };
+  const level = levelOverride || (mode==='campaign' ? campaignStats.current_level : null);
+  if(mode==='daily' || mode==='campaign') {
+    gameState[mode] = { started: true, won: false, guessCount: 0, level: level };
   }
   showScreen('game');
   document.getElementById('g-loading').style.display='flex';
@@ -749,7 +828,8 @@ async function startGame(mode, custom=null) {
   setFeedback('idle','Proposez votre premier mot…');
   document.getElementById('prog-fill').style.width='0%';
 
-  const resp = await api('/api/new_game',{mode,custom});
+  const resp = await api('/api/new_game',{mode, level});
+  if(resp.campaign_stats) campaignStats = resp.campaign_stats;
   document.getElementById('g-loading').style.display='none';
   document.getElementById('g-content').style.display='flex';
 
@@ -781,7 +861,7 @@ async function sendGuess() {
   document.getElementById('tc-num').textContent=res.guess_count;
   document.getElementById('s-tries').textContent=res.guess_count;
   // Mettre à jour le suivi de la partie en cours
-  if(currentMode==='daily' || currentMode==='random') {
+  if(currentMode==='daily' || currentMode==='campaign') {
     gameState[currentMode].guessCount = res.guess_count;
   }
 
@@ -824,8 +904,17 @@ async function sendGuess() {
   addGuess(word, res.matches, res.proximity_results);
   if(res.won) {
     active=false;
-    if(currentMode==='daily' || currentMode==='random') {
+    if(currentMode==='daily' || currentMode==='campaign') {
       gameState[currentMode].won = true;
+    }
+    // Rafraichir les stats campagne depuis le serveur
+    if(currentMode==='campaign') {
+      api('/api/campaign_stats', {}).then(r => {
+        if(r.campaign_stats) {
+          campaignStats=r.campaign_stats;
+          updateMenuButtons();
+        }
+      });
     }
     setTimeout(()=>showVictory(stats,res),400);
   }
@@ -906,7 +995,29 @@ function showVictory(stats, res) {
   const e=stats.elapsed_seconds;
   document.getElementById('v-time').textContent=`${Math.floor(e/60)}m${e%60}s`;
   document.getElementById('v-emojis').textContent=guessEmojis.slice(-24).join('');
+  // Adapter les boutons selon le mode
+  const nextBtn = document.getElementById('v-next-btn');
+  if(nextBtn) {
+    if(currentMode === 'campaign') {
+      nextBtn.textContent = '▶ Niveau suivant';
+      nextBtn.style.display = '';
+    } else if(currentMode === 'daily') {
+      nextBtn.textContent = '🎮 Jouer en campagne';
+      nextBtn.style.display = '';
+    } else {
+      nextBtn.style.display = 'none';
+    }
+  }
   document.getElementById('victory').classList.add('show');
+}
+
+function onVictoryNext() {
+  closeVictory();
+  if(currentMode === 'campaign') {
+    startGame('campaign'); // démarre le niveau suivant (avancé par le serveur)
+  } else {
+    startGame('campaign');
+  }
 }
 
 async function revealAll() {
@@ -933,10 +1044,62 @@ async function revealAll() {
 function closeVictory() { document.getElementById('victory').classList.remove('show'); }
 
 // Init au chargement
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  // Charger les stats campagne depuis le serveur
+  try {
+    const r = await api('/api/campaign_stats', {});
+    if(r.campaign_stats) campaignStats = r.campaign_stats;
+  } catch(e) {}
   updateMenuButtons();
   initQR();
 });
+
+function showLevels() {
+  showScreen('levels');
+  renderLevelsGrid();
+}
+
+function renderLevelsGrid() {
+  const grid = document.getElementById('levels-grid');
+  const stats = campaignStats;
+  const completed = stats.completed || 0;
+  const current   = stats.current_level || 1;
+  const total     = stats.total || 500;
+
+  // Update header progress
+  document.getElementById('lvl-progress-text').textContent = completed + ' / ' + total;
+  document.getElementById('lvl-progress-fill').style.width = stats.percent + '%';
+
+  // Update menu sub
+  const menuSub = document.getElementById('levels-menu-sub');
+  if(menuSub) menuSub.textContent = completed + '/500 complétés';
+
+  grid.innerHTML = '';
+  for(let lvl = 1; lvl <= total; lvl++) {
+    const btn = document.createElement('button');
+    // Un niveau est "done" si son index est dans campaign_completed
+    // On déduit : les niveaux < current_level sont tous complétés
+    // (l'avancement est séquentiel sauf si on a rejoué)
+    const isDone    = lvl < current;
+    const isCurrent = lvl === current;
+    const isLocked  = lvl > current;
+
+    btn.className = 'lvl-btn' + (isDone ? ' done' : isCurrent ? ' current' : ' locked');
+    btn.innerHTML = `<span class="lvl-num">${lvl}</span>${isDone ? '<span class="lvl-check">✓</span>' : isCurrent ? '<span class="lvl-check">▶</span>' : ''}`;
+
+    if(isDone || isCurrent) {
+      btn.addEventListener('click', () => {
+        closeVictory();
+        showScreen('game');
+        startGame('campaign', lvl);
+      });
+      btn.title = 'Jouer le niveau ' + lvl;
+    } else {
+      btn.title = 'Terminez le niveau ' + (lvl-1) + ' pour débloquer';
+    }
+    grid.appendChild(btn);
+  }
+}
 
 async function showHistory() {
   showScreen('history');

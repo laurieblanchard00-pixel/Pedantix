@@ -101,11 +101,7 @@ self.addEventListener('fetch', e => {
 """
 
 
-def get_or_create_game(session_id, mode='daily', custom=None):
-    game = manager.start_game(mode=mode, custom_title=custom)
-    GAMES[session_id] = game
-    GAME_MODES[session_id] = mode
-    return game
+
 
 
 class GameHandler(BaseHTTPRequestHandler):
@@ -145,14 +141,19 @@ class GameHandler(BaseHTTPRequestHandler):
 
         if p == '/api/new_game':
             mode = data.get('mode', 'daily')
-            custom = data.get('custom', None)
+            level = data.get('level', None)
             session = data.get('session', 'default')
-            game = get_or_create_game(session, mode, custom)
+            game = manager.start_game(mode=mode, level=level)
+            GAMES[session] = game
+            GAME_MODES[session] = mode
+            meta = getattr(game, 'meta', {})
             self._json({
                 'ok': True,
                 'tokens': game.get_display_tokens(),
                 'title_tokens': game.get_title_display(),
                 'stats': game.get_stats(),
+                'meta': meta,
+                'campaign_stats': manager.get_campaign_stats(),
             })
 
         elif p == '/api/guess':
@@ -163,7 +164,7 @@ class GameHandler(BaseHTTPRequestHandler):
                 game = get_or_create_game(session)
             result = game.guess(word)
             if result.get('won'):
-                manager.save_result(game, GAME_MODES.get(session, 'random'))
+                manager.save_result(game, GAME_MODES.get(session, 'daily'))
             self._json({
                 'result': result,
                 'tokens': game.get_display_tokens(),
@@ -174,6 +175,9 @@ class GameHandler(BaseHTTPRequestHandler):
 
         elif p == '/api/history':
             self._json({'history': manager.get_history()[-20:]})
+
+        elif p == '/api/campaign_stats':
+            self._json({'campaign_stats': manager.get_campaign_stats()})
 
         elif p == '/api/reveal':
             # Retourne tous les vrais mots (pour affichage fin de partie)
