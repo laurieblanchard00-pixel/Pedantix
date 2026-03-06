@@ -187,33 +187,35 @@ body {
 }
 .btn-go:hover { background: #6aa4ff; }
 
-.legend-box {
-  background: var(--surf1);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 13px 15px;
-}
-.legend-box h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--g2); font-weight: 700; margin-bottom: 9px; }
-.legend-row { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-.leg { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--g1); }
-.ls { width: 18px; height: 13px; border-radius: 3px; flex-shrink: 0; border: 1px solid transparent; }
-.ls-exact  { background: var(--green); }
-.ls-proche { background: #888; }
-.ls-tiede  { background: #555; }
-.ls-froid  { background: #333; }
-.ls-hidden { background: var(--c-hidden); border-color: var(--border); }
+/* legend removed */
 
-.tip-box {
+.qr-box {
   background: rgba(77,142,245,0.07);
   border: 1px solid rgba(77,142,245,0.22);
   border-radius: var(--r);
-  padding: 12px 15px;
+  padding: 14px 16px;
   font-size: 13px;
   color: var(--g1);
-  line-height: 1.65;
+  text-align: center;
 }
-.tip-box strong { color: var(--blue); display: block; margin-bottom: 5px; font-size: 13px; }
-.tip-box code { color: var(--blue); font-family: var(--mono); font-size: 12px; }
+.qr-box strong { color: var(--blue); display: block; margin-bottom: 10px; font-size: 13px; }
+.qr-box code { color: var(--blue); font-family: var(--mono); font-size: 12px; display:block; margin-top:8px; }
+#qr-container canvas, #qr-container img { border-radius: 8px; }
+
+/* Badge "en cours" sur les boutons du menu */
+.mode-card .resume-badge {
+  display: inline-block;
+  background: rgba(48,217,136,0.18);
+  color: var(--green);
+  border: 1px solid rgba(48,217,136,0.3);
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  margin-top: 3px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
 
 /* ══════════════════════════════
    GAME SCREEN — SPLIT LAYOUT
@@ -540,15 +542,21 @@ body {
         <p>Devinez la page Wikipédia en proposant des mots</p>
       </div>
 
-      <button class="mode-card daily" onclick="startGame('daily')">
+      <button class="mode-card daily" id="btn-daily" onclick="resumeOrStart('daily')">
         <div class="mode-icon">🗓️</div>
-        <div class="mode-text"><strong>Partie du Jour</strong><span>La même page pour tous · Change à midi</span></div>
+        <div class="mode-text">
+          <strong>Partie du Jour</strong>
+          <span id="daily-sub">La même page pour tous · Change à midi</span>
+        </div>
         <span class="mode-chevron">›</span>
       </button>
 
-      <button class="mode-card random" onclick="startGame('random')">
+      <button class="mode-card random" id="btn-random" onclick="resumeOrStart('random')">
         <div class="mode-icon">🎲</div>
-        <div class="mode-text"><strong>Partie Aléatoire</strong><span>Jouez autant de fois que vous voulez par jour</span></div>
+        <div class="mode-text">
+          <strong>Partie Aléatoire</strong>
+          <span id="random-sub">Jouez autant de fois que vous voulez par jour</span>
+        </div>
         <span class="mode-chevron">›</span>
       </button>
 
@@ -560,22 +568,11 @@ body {
         <span class="mode-chevron">›</span>
       </button>
 
-      <div class="legend-box">
-        <h4>Légende</h4>
-        <div class="legend-row">
-          <div class="leg"><div class="ls ls-exact"></div>Révélé</div>
-          <div class="leg"><div class="ls ls-proche"></div>Très proche</div>
-          <div class="leg"><div class="ls ls-tiede"></div>Proche</div>
-          <div class="leg"><div class="ls ls-froid"></div>Peu proche</div>
-          <div class="leg"><div class="ls ls-hidden"></div>Masqué (survol = nb lettres)</div>
-        </div>
-      </div>
-
-      <div class="tip-box">
-        <strong>📱 Jouer sur téléphone Android</strong>
-        Connectez votre téléphone au <strong style="color:var(--white)">même Wi-Fi</strong> que votre PC, puis ouvrez Chrome et tapez :<br>
-        <code id="mobile-url">http://[IP-DU-PC]:8000</code><br>
-        <span style="font-size:12px;color:var(--g2)">L'IP locale s'affiche dans le terminal au démarrage de server.py</span>
+      <!-- QR CODE / LIEN MOBILE (injecté dynamiquement) -->
+      <div class="qr-box" id="qr-box" style="display:none">
+        <strong>📱 Jouer sur mobile</strong>
+        <div id="qr-container"></div>
+        <code id="mobile-url-display"></code>
       </div>
     </div>
   </div>
@@ -656,6 +653,14 @@ body {
 const SESSION = 'g' + Math.random().toString(36).slice(2,9);
 let guessEmojis = [], active = false, currentMode = 'daily';
 
+// Suivi des parties en cours (pour reprendre)
+// { daily: {started: bool, won: bool, guessCount: int},
+//   random: {started: bool, won: bool, guessCount: int} }
+const gameState = {
+  daily:  { started: false, won: false, guessCount: 0 },
+  random: { started: false, won: false, guessCount: 0 },
+};
+
 async function api(path, data={}) {
   const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...data, session:SESSION})});
   return r.json();
@@ -668,12 +673,72 @@ function showScreen(name) {
   document.getElementById('btn-back-top').style.display = name!=='menu' ? 'flex' : 'none';
   document.getElementById('topbar-counter').style.display = inGame ? 'flex' : 'none';
 }
-function goMenu() { showScreen('menu'); }
+function goMenu() {
+  showScreen('menu');
+  updateMenuButtons();
+  initQR();
+}
+
+function updateMenuButtons() {
+  // Partie du jour
+  const dailySub = document.getElementById('daily-sub');
+  if(gameState.daily.started && !gameState.daily.won) {
+    dailySub.innerHTML = `<span class="resume-badge">▶ En cours</span> · ${gameState.daily.guessCount} essai${gameState.daily.guessCount>1?'s':''}`;
+  } else if(gameState.daily.won) {
+    dailySub.innerHTML = `<span class="resume-badge" style="background:rgba(77,142,245,0.15);color:var(--blue);border-color:rgba(77,142,245,0.3)">✓ Terminée</span>`;
+  } else {
+    dailySub.textContent = 'La même page pour tous · Change à midi';
+  }
+  // Partie aléatoire
+  const randomSub = document.getElementById('random-sub');
+  if(gameState.random.started && !gameState.random.won) {
+    randomSub.innerHTML = `<span class="resume-badge">▶ En cours</span> · ${gameState.random.guessCount} essai${gameState.random.guessCount>1?'s':''}`;
+  } else {
+    randomSub.textContent = 'Jouez autant de fois que vous voulez par jour';
+  }
+}
+
+function resumeOrStart(mode) {
+  // Si une partie est en cours pour ce mode, reprendre
+  if(gameState[mode] && gameState[mode].started && !gameState[mode].won) {
+    currentMode = mode;
+    showScreen('game');
+  } else {
+    startGame(mode);
+  }
+}
+
+function initQR() {
+  // Afficher QR code uniquement sur desktop (pas sur mobile)
+  if(window.innerWidth <= 680) return;
+  const url = window.location.href.replace(/\/$/, '');
+  // Utiliser l'API QR publique (pas de dépendance)
+  const qrBox = document.getElementById('qr-box');
+  const container = document.getElementById('qr-container');
+  const urlDisplay = document.getElementById('mobile-url-display');
+  if(!qrBox || !container) return;
+  // Afficher seulement si l'URL contient une IP ou un domaine (pas localhost seul)
+  const isLocal = url.includes('localhost') || url.includes('127.0.0.1');
+  qrBox.style.display = 'block';
+  urlDisplay.textContent = url;
+  // Générer le QR via API publique
+  const encoded = encodeURIComponent(url);
+  container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encoded}&bgcolor=1a1a22&color=4d8ef5&margin=8" width="140" height="140" alt="QR Code" style="border-radius:8px" onerror="this.style.display='none'">`;
+  if(isLocal) {
+    qrBox.querySelector('strong').textContent = '📱 Scanner pour jouer sur mobile (même Wi-Fi)';
+  } else {
+    qrBox.querySelector('strong').textContent = '📱 Scanner pour jouer sur mobile';
+  }
+}
 
 
 
 async function startGame(mode, custom=null) {
   currentMode=mode; guessEmojis=[]; active=false;
+  // Marquer comme nouvelle partie (réinitialise l'en-cours)
+  if(mode==='daily' || mode==='random') {
+    gameState[mode] = { started: true, won: false, guessCount: 0 };
+  }
   showScreen('game');
   document.getElementById('g-loading').style.display='flex';
   document.getElementById('g-content').style.display='none';
@@ -715,6 +780,10 @@ async function sendGuess() {
 
   document.getElementById('tc-num').textContent=res.guess_count;
   document.getElementById('s-tries').textContent=res.guess_count;
+  // Mettre à jour le suivi de la partie en cours
+  if(currentMode==='daily' || currentMode==='random') {
+    gameState[currentMode].guessCount = res.guess_count;
+  }
 
   const stats=resp.stats;
   const pct=Math.round(stats.words_revealed/Math.max(stats.words_total,1)*100);
@@ -753,7 +822,13 @@ async function sendGuess() {
   }
 
   addGuess(word, res.matches, res.proximity_results);
-  if(res.won) { active=false; setTimeout(()=>showVictory(stats,res),400); }
+  if(res.won) {
+    active=false;
+    if(currentMode==='daily' || currentMode==='random') {
+      gameState[currentMode].won = true;
+    }
+    setTimeout(()=>showVictory(stats,res),400);
+  }
 }
 
 function renderTitle(tokens) {
@@ -856,6 +931,12 @@ async function revealAll() {
   setFeedback('success', '📖 Texte complet révélé !');
 }
 function closeVictory() { document.getElementById('victory').classList.remove('show'); }
+
+// Init au chargement
+window.addEventListener('DOMContentLoaded', () => {
+  updateMenuButtons();
+  initQR();
+});
 
 async function showHistory() {
   showScreen('history');
